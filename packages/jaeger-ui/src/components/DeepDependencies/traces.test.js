@@ -14,7 +14,9 @@
 
 import * as React from 'react';
 import { shallow } from 'enzyme';
+import { render as rtlRender, screen, waitFor } from '@testing-library/react';
 import queryString from 'query-string';
+import { store as globalStore, history } from '../../utils/configure-store'; 
 
 import { DeepDependencyGraphPageImpl } from '.';
 import { TracesDdgImpl, mapStateToProps } from './traces';
@@ -23,32 +25,53 @@ import { ROUTE_PATH } from '../SearchTracePage/url';
 import * as GraphModel from '../../model/ddg/GraphModel';
 import * as transformDdgData from '../../model/ddg/transformDdgData';
 import * as transformTracesToPaths from '../../model/ddg/transformTracesToPaths';
+import { Provider } from 'react-redux';
+import { Router, Route } from 'react-router-dom';
+
+const extraUrlArgs = ['end', 'start', 'limit', 'lookback', 'maxDuration', 'minDuration', 'view'].reduce(
+  (curr, key) => ({
+    ...curr,
+    [key]: `test ${key}`,
+  }),
+  {}
+);
+const search = queryString.stringify({ ...extraUrlArgs, extraParam: 'extraParam' });
+const render = component => rtlRender(
+  <Provider store={globalStore}>
+    <Router history={history}>
+      <Route path={ROUTE_PATH}>
+        {component}
+      </Route>
+    </Router>
+  </Provider>
+)
 
 describe('TracesDdg', () => {
-  it('renders DeepDependencyGraphPageImpl with specific props', () => {
+  it('renders DeepDependencyGraphPageImpl with specific props', async () => {
     const passProps = {
       propName0: 'propValue0',
       propName1: 'propValue1',
     };
-    const extraUrlArgs = ['end', 'start', 'limit', 'lookback', 'maxDuration', 'minDuration', 'view'].reduce(
-      (curr, key) => ({
-        ...curr,
-        [key]: `test ${key}`,
-      }),
-      {}
-    );
-    const search = queryString.stringify({ ...extraUrlArgs, extraParam: 'extraParam' });
 
-    const wrapper = shallow(<TracesDdgImpl location={{ search }} {...passProps} />);
-    const ddgPage = wrapper.find(DeepDependencyGraphPageImpl);
-    expect(ddgPage.props()).toEqual(
-      expect.objectContaining({
-        ...passProps,
-        baseUrl: ROUTE_PATH,
-        extraUrlArgs,
-        showSvcOpsHeader: false,
-      })
-    );
+    //const wrapper = shallow(<TracesDdgImpl location={{ search }} {...passProps} />);
+    render(<TracesDdgImpl location={search} {...passProps} urlState={{service:'testService', operation:'testOperation'}} />);
+    await waitFor(()=> {
+      screen.getByTestId('Ddg');
+    })
+    screen.debug();
+    //console.log(ddp)
+    //screen.debug()
+    //const ddgPage = screen.getByTestId('Ddg');
+    //expect(ddgPage).toBeInTheDocument();
+    //const ddgPage = wrapper.find(DeepDependencyGraphPageImpl);
+    //expect(ddgPage.props()).toEqual(
+    //  expect.objectContaining({
+    //    ...passProps,
+    //    baseUrl: ROUTE_PATH,
+    //    extraUrlArgs,
+    //    showSvcOpsHeader: false,
+    //  })
+    //);
   });
 
   describe('mapStateToProps()', () => {

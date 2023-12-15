@@ -378,7 +378,7 @@ export class DeepDependencyGraphPageImpl extends React.PureComponent<TProps, TSt
     }
 
     return (
-      <div className="Ddg">
+      <div className="Ddg" data-testid="Ddg">
         <div>
           <Header
             clearOperation={this.clearOperation}
